@@ -1,5 +1,3 @@
-import mido
-
 def quantize_note_timings(midi_data, quantize_to=16, mode="both"):
     ticks_per_quantize = midi_data.ticks_per_beat // quantize_to
     start_times = []

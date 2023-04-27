@@ -1,4 +1,3 @@
-import mido
 import numpy as np
 
 def normalize_velocities(midi_data, target_range=(40, 100)):
