@@ -27,9 +27,26 @@ def load_midi_files(file_directory):
             midi_files.append(os.path.join(file_directory, file))
     return midi_files
 
+def train_lstm_model(train_sequences, train_labels, validation_sequences, validation_labels, input_shape, num_classes):
+    # Define the LSTM model architecture
+    model = tf.keras.Sequential([
+        tf.keras.layers.InputLayer(input_shape=input_shape),
+        tf.keras.layers.LSTM(units=128, return_sequences=True),
+        tf.keras.layers.LSTM(units=128),
+        tf.keras.layers.Dense(units=num_classes, activation='softmax')
+    ])
+
+    # Compile the model
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+    # Fit the model to the data
+    history = model.fit(train_sequences, train_labels, epochs=20, validation_data=(validation_sequences, validation_labels))
+
+    return model, history
+
 def train_machine_learning_model():
-    # Load and preprocess your MIDI data
-    file_directory = "path/to/your/midi/files"
+    # Load and preprocess my MIDI data
+    file_directory = "path/to/my/midi/files"
     midi_files = load_midi_files(file_directory)
     preprocessed_midi_data = [preprocess_midi_data(parse_midi_file(file)) for file in midi_files]
 
@@ -40,12 +57,15 @@ def train_machine_learning_model():
     train_sequences, train_labels = preprocess_data_for_training(train_data)
     validation_sequences, validation_labels = preprocess_data_for_training(validation_data)
 
-    # Determine input_shape and num_classes based on your preprocessed data
+    # Determine input_shape and num_classes based on preprocessed data
     input_shape = (sequence_length, num_features)
     num_classes = num_classes_based_on_data
 
     # Train the LSTM model
-    model, history = train_machine_learning_model(train_sequences, train_labels, validation_sequences, validation_labels, input_shape, num_classes)
+    model, history = train_lstm_model(train_sequences, train_labels, validation_sequences, validation_labels, input_shape, num_classes)
+
+    return model, history
+
 
 def filter_midi_data(midi_data, model):
     # Use the trained machine learning model to filter MIDI data
