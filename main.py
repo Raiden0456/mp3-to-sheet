@@ -1,6 +1,8 @@
 import os
 import mido
 import tensorflow as tf
+import tkinter as tk
+from tkinter import filedialog
 from utils.preprocess.quantize_note_timings import quantize_note_timings
 from utils.preprocess.normalize_velocities import normalize_velocities
 from utils.preprocess.filter_unnecessary_data import filter_unnecessary_data
@@ -73,24 +75,27 @@ def filter_midi_data(midi_data, model):
 
 def convert_midi_to_music_representation(midi_data):
     # Convert MIDI data to music representation using music21
-    pass
+    music_rep = converter.parse(midi_data)
+    return music_rep
 
 def generate_sheet_music(music_representation):
-    # Generate sheet music using music21
-    pass
+    sheet_music = music_representation
+    return sheet_music
 
-def export_sheet_music(sheet_music, output_format):
+def export_sheet_music(sheet_music, output_format, filename):
     # Export sheet music to desired format (e.g., PDF)
-    pass
+    sheet_music.write(output_format, fp=filename)
 
 if __name__ == "__main__":
-    midi_file_path = "path/to/your/midi/file.mid"
+    root = tk.Tk()
+    root.withdraw()  # we don't want a full GUI, so keep the root window from appearing
+    midi_file_path = filedialog.askopenfilename()  # show an "Open" dialog box and return the path to the selected file
     midi_data = parse_midi_file(midi_file_path)
     preprocess_midi_data(midi_data)
-
     model = train_machine_learning_model()
     filter_midi_data(midi_data, model)
 
-    music_representation = convert_midi_to_music_representation(midi_data)
+    music_representation = convert_midi_to_music_representation(midi_file_path)
     sheet_music = generate_sheet_music(music_representation)
-    export_sheet_music(sheet_music, "pdf")
+    output_file_path = "./resultXML/" + os.path.splitext(os.path.basename(midi_file_path))[0] + ".xml"
+    export_sheet_music(sheet_music, "musicxml", output_file_path)
