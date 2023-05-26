@@ -3,6 +3,7 @@ import mido
 import tensorflow as tf
 import tkinter as tk
 from tkinter import filedialog
+import numpy as np
 from utils.preprocess.quantize_note_timings import quantize_note_timings
 from utils.preprocess.normalize_velocities import normalize_velocities
 from utils.preprocess.filter_unnecessary_data import filter_unnecessary_data
@@ -33,6 +34,14 @@ def load_midi_files(file_directory):
     return midi_files
 
 def train_lstm_model(train_sequences, train_labels, validation_sequences, validation_labels, input_shape, num_classes):
+
+    print("Train sequences shape: ", train_sequences.shape)
+    print("Train labels shape: ", train_labels.shape)
+    print("Validation sequences shape: ", validation_sequences.shape)
+    print("Validation labels shape: ", validation_labels.shape)
+    print("Input shape: ", input_shape)
+    print("Number of classes: ", num_classes)
+
     # Define the LSTM model architecture
     model = tf.keras.Sequential([
         tf.keras.layers.InputLayer(input_shape=input_shape),
@@ -40,6 +49,11 @@ def train_lstm_model(train_sequences, train_labels, validation_sequences, valida
         tf.keras.layers.LSTM(units=128),
         tf.keras.layers.Dense(units=num_classes, activation='softmax')
     ])
+
+    print(model.summary())
+    print("Model input shape: ", model.input_shape)
+    print("Model output shape: ", model.output_shape)
+    
 
     # Compile the model
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
@@ -75,8 +89,8 @@ def train_machine_learning_model():
     print("Created {} validation sequences and {} validation labels".format(len(validation_sequences), len(validation_labels)))
 
     # Determine input_shape and num_classes based on preprocessed data
-    input_shape = (sequence_length, num_features)
-    num_classes = num_classes_based_on_data
+    input_shape = train_sequences.shape[1:]  # Use the shape of the sequences for input_shape
+    num_classes = len(np.unique(train_labels))  # Determine the number of unique classes in train_labels
 
     # Train the LSTM model
     model, history = train_lstm_model(train_sequences, train_labels, validation_sequences, validation_labels, input_shape, num_classes)

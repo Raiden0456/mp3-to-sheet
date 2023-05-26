@@ -5,10 +5,10 @@ def split_train_validation_data(preprocessed_midi_data, validation_ratio=0.2):
     train_data, validation_data = train_test_split(preprocessed_midi_data, test_size=validation_ratio, random_state=42)
     return train_data, validation_data
 
+
 def preprocess_data_for_training(preprocessed_midi_data, sequence_length=32):
     sequences = []
     labels = []
-    print("Type of preprocessed_midi_data: ", type(preprocessed_midi_data))
 
     for midi_file_data in preprocessed_midi_data:
         midi_events = []
@@ -22,9 +22,18 @@ def preprocess_data_for_training(preprocessed_midi_data, sequence_length=32):
             sequence = midi_events[i:i+sequence_length]
             label = midi_events[i+sequence_length]
 
-            # Adjust how you extract features from MIDI events
-            sequence_features = np.array([[event.note, event.time] for event in sequence])
-            label_encoded = label.note
+            # Adjust how to extract features from MIDI events
+            sequence_features = []
+            for event in sequence:
+                if hasattr(event, 'note'):
+                    sequence_features.append([event.note, event.time])
+                else:
+                    sequence_features.append([0, event.time])  # Replace with appropriate handling
+
+            if hasattr(label, 'note'):
+                label_encoded = label.note
+            else:
+                label_encoded = 0  # Replace with appropriate handling
 
             sequences.append(sequence_features)
             labels.append(label_encoded)
