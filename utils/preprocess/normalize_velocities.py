@@ -1,15 +1,15 @@
 import numpy as np
 
-def normalize_velocities(midi_data, target_range=(40, 100)):
-    velocities = []
+def normalize_velocities(midi_data, target_range=(40, 100)):  
+    velocities = []  
 
-    # Collect all velocities from the MIDI data
-    for track in midi_data.tracks:
-        for msg in track:
-            if msg.type == 'note_on' and msg.velocity > 0:
-                velocities.append(msg.velocity)
+    # Collect all velocities from the MIDI data  
+    for track in midi_data.tracks:  
+        for msg in track:  
+            if msg.type == 'note_on' and msg.velocity > 0:  
+                velocities.append(msg.velocity)  
 
-    if not velocities:
+    if not velocities or np.isnan(velocities).any():  
         return midi_data
 
     # Calculate mean and standard deviation of velocities
@@ -20,8 +20,8 @@ def normalize_velocities(midi_data, target_range=(40, 100)):
     for track in midi_data.tracks:
         for msg in track:
             if msg.type == 'note_on' and msg.velocity > 0:
-                normalized_velocity = (msg.velocity - mean_velocity) / std_velocity
-                rescaled_velocity = int(np.clip(normalized_velocity * (target_range[1] - target_range[0]) / 2 + np.mean(target_range), 1, 127))
+                normalized_velocity = (msg.velocity - mean_velocity) / (std_velocity + 1e-10)
+                rescaled_velocity = int(np.clip(normalized_velocity * (target_range[1] - target_range[0] + 1e-10) / 2 + np.mean(target_range), 1, 127))
                 msg.velocity = rescaled_velocity
 
     return midi_data

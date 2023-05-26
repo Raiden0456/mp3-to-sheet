@@ -35,20 +35,24 @@ def quantize_times(times_list, ticks_per_quantize):
     return [(msg, round(time / ticks_per_quantize) * ticks_per_quantize) for msg, time in times_list]
 
 def reconstruct_midi_data(midi_data, start_times, durations):
-    start_times_dict = {msg: time for msg, time in start_times}
-    durations_dict = {msg: duration for msg, duration in durations}
+    start_times_dict = {(msg.note, msg.velocity): time for msg, time in start_times if msg.type in ['note_on', 'note_off']}
+    durations_dict = {(msg.note, msg.velocity): duration for msg, duration in durations if msg.type in ['note_on', 'note_off']}
 
     for track in midi_data.tracks:
         current_time = 0
         for msg in track:
             current_time += msg.time
 
-            if msg.type == 'note_on' and msg.velocity > 0 and msg in start_times_dict:
-                msg.time = start_times_dict[msg] - current_time
+            if msg.type in ['note_on', 'note_off']:
+                msg_tuple = (msg.note, msg.velocity)
+                if msg.type == 'note_on' and msg.velocity > 0 and msg_tuple in start_times_dict:
+                    msg.time = start_times_dict[msg_tuple] - current_time
 
-            if (msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0)) and msg in durations_dict:
-                matching_note_on, _ = find_matching_note_on(msg, start_times)
-                if matching_note_on:
-                    msg.time = start_times_dict[matching_note_on] + durations_dict[msg] - current_time
+                if (msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0)) and msg_tuple in durations_dict:
+                    matching_note_on, _ = find_matching_note_on(msg, start_times)
+                    if matching_note_on:
+                        matching_note_on_tuple = (matching_note_on.note, matching_note_on.velocity)
+                        msg.time = start_times_dict[matching_note_on_tuple] + durations_dict[msg_tuple] - current_time
 
     return midi_data
+

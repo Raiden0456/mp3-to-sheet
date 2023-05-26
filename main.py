@@ -8,6 +8,7 @@ from utils.preprocess.normalize_velocities import normalize_velocities
 from utils.preprocess.filter_unnecessary_data import filter_unnecessary_data
 from utils.train.functions import split_train_validation_data, preprocess_data_for_training
 from music21 import *
+import musescore
 
 # Read and parse MIDI file using mido
 def parse_midi_file(midi_file_path):
@@ -19,14 +20,16 @@ def preprocess_midi_data(midi_data):
     midi_data = quantize_note_timings(midi_data)
     midi_data = normalize_velocities(midi_data)
     midi_data = filter_unnecessary_data(midi_data)
-    pass
+    return midi_data
 
 # Load a list of MIDI files for training and validation
 def load_midi_files(file_directory):
     midi_files = []
-    for file in os.listdir(file_directory):
-        if file.endswith(".mid") or file.endswith(".midi"):
-            midi_files.append(os.path.join(file_directory, file))
+    for root, dirs, files in os.walk(file_directory):
+        for file in files:
+            if file.endswith(".mid") or file.endswith(".midi"):
+                midi_files.append(os.path.join(root, file))
+
     return midi_files
 
 def train_lstm_model(train_sequences, train_labels, validation_sequences, validation_labels, input_shape, num_classes):
@@ -48,16 +51,28 @@ def train_lstm_model(train_sequences, train_labels, validation_sequences, valida
 
 def train_machine_learning_model():
     # Load and preprocess my MIDI data
-    file_directory = "path/to/my/midi/files"
+    file_directory = "./adl-piano-midi/Children"
     midi_files = load_midi_files(file_directory)
+
+    print("Loaded {} MIDI files".format(len(midi_files)))
+
     preprocessed_midi_data = [preprocess_midi_data(parse_midi_file(file)) for file in midi_files]
+
+    print("Preprocessed {} MIDI files".format(len(preprocessed_midi_data)))
 
     # Split the preprocessed MIDI data into training and validation sets
     train_data, validation_data = split_train_validation_data(preprocessed_midi_data)
 
+    print("Split {} MIDI files into {} training files and {} validation files".format(len(preprocessed_midi_data), len(train_data), len(validation_data)))
+
     # Further preprocess the MIDI data to create input sequences and corresponding labels for training
     train_sequences, train_labels = preprocess_data_for_training(train_data)
+
+    print("Created {} training sequences and {} training labels".format(len(train_sequences), len(train_labels)))
+
     validation_sequences, validation_labels = preprocess_data_for_training(validation_data)
+    
+    print("Created {} validation sequences and {} validation labels".format(len(validation_sequences), len(validation_labels)))
 
     # Determine input_shape and num_classes based on preprocessed data
     input_shape = (sequence_length, num_features)
@@ -93,9 +108,11 @@ if __name__ == "__main__":
     midi_data = parse_midi_file(midi_file_path)
     preprocess_midi_data(midi_data)
     model = train_machine_learning_model()
-    filter_midi_data(midi_data, model)
+    # filter_midi_data(midi_data, model)
 
     music_representation = convert_midi_to_music_representation(midi_file_path)
     sheet_music = generate_sheet_music(music_representation)
-    output_file_path = "./resultXML/" + os.path.splitext(os.path.basename(midi_file_path))[0] + ".xml"
-    export_sheet_music(sheet_music, "musicxml", output_file_path)
+    output_file_path_XML = "./resultXML/" + os.path.splitext(os.path.basename(midi_file_path))[0] + ".xml"
+    output_file_path_PDF = "./resultPDF/" + os.path.splitext(os.path.basename(midi_file_path))[0] + ".pdf"
+    export_sheet_music(sheet_music, "musicxml", output_file_path_XML)
+    
