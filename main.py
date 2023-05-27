@@ -86,16 +86,19 @@ def train_machine_learning_model():
     # Determine input_shape and num_classes based on preprocessed data
     input_shape = train_sequences.shape[1:] # Use the shape of the sequences for input_shape
     num_classes = np.max(train_labels) + 1 # Determine the number of unique classes in train_labels
-    
+
     # Train the LSTM model
     model, history = train_lstm_model(train_sequences, train_labels, validation_sequences, validation_labels, input_shape, num_classes)
     return model, history
 
-
-
 def filter_midi_data(midi_data, model):
-    # Use the trained machine learning model to filter MIDI data
-    pass
+    print("Midi data type: ", type(midi_data))
+    # Convert the MIDI data to numerical format suitable for the model
+    preprocessed_data = preprocess_midi_data(midi_data)
+
+    # Perform the prediction using the preprocessed data
+    predictions = model.predict(preprocessed_data)
+    return predictions
 
 def convert_midi_to_music_representation(midi_data):
     # Convert MIDI data to music representation using music21
@@ -117,7 +120,7 @@ if __name__ == "__main__":
     midi_data = parse_midi_file(midi_file_path)
     preprocess_midi_data(midi_data)
     model = train_machine_learning_model()
-    # filter_midi_data(midi_data, model)
+    filter_midi_data(midi_data, model[0])
 
     music_representation = convert_midi_to_music_representation(midi_file_path)
     sheet_music = generate_sheet_music(music_representation)
