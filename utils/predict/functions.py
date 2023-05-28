@@ -22,22 +22,21 @@ def preprocess_data_for_prediction(midi_data, sequence_length=32):
 
 # Postprocess predicted sequences to MIDI data
 def postprocess_sequences_to_midi(sequence, output_file_path):
-    # Create a new MIDI file
-    midi = mido.MidiFile()
-
-    # Create a new track
+    mid = mido.MidiFile()
     track = mido.MidiTrack()
-    midi.tracks.append(track)
+    mid.tracks.append(track)
 
-    # Convert each note in the sequence to a MIDI message and add it to the track
-    for note in sequence:
-        # Create a new note_on message and add it to the track
-        note_on = mido.Message('note_on', note=note, velocity=64, time=0)
-        track.append(note_on)
+    for note_sequence in sequence:
+        for note in note_sequence:
+            # Ensure the note value is an integer
+            note = int(note)
 
-        # Create a new note_off message and add it to the track
-        note_off = mido.Message('note_off', note=note, velocity=64, time=480)
-        track.append(note_off)
+            note_on = mido.Message('note_on', note=note, velocity=64, time=0)
+            track.append(note_on)
 
-    # Save the MIDI file
-    midi.save(output_file_path)
+            note_off = mido.Message('note_off', note=note, velocity=64, time=960)
+            track.append(note_off)
+
+    mid.save(output_file_path)
+
+

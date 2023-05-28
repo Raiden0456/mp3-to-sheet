@@ -83,14 +83,13 @@ def train_machine_learning_model():
     print("Preprocessed {} impure MIDI files".format(len(preprocessed_impure_midi_data)))
 
     # Split the preprocessed MIDI data into training and validation sets
-    train_data, validation_data = split_train_validation_data(preprocessed_impure_midi_data)
-    train_labels, validation_labels = split_train_validation_data(preprocessed_pure_midi_data)
+    train_data, validation_data, train_labels, validation_labels = split_train_validation_data(preprocessed_impure_midi_data, preprocessed_pure_midi_data)
     
     print("Split {} MIDI files into {} training files and {} validation files".format(len(preprocessed_impure_midi_data), len(train_data), len(validation_data)))
 
     # Further preprocess the MIDI data to create input sequences and corresponding labels for training
-    train_sequences = preprocess_data_for_training(train_data)
-    validation_sequences = preprocess_data_for_training(validation_data)
+    train_sequences, train_labels = preprocess_data_for_training(train_data, train_labels)
+    validation_sequences, validation_labels = preprocess_data_for_training(validation_data, validation_labels)
     
     print("Created {} training sequences and {} validation sequences".format(len(train_sequences), len(validation_sequences)))
 
@@ -103,7 +102,8 @@ def train_machine_learning_model():
     return model, history
 
 
-def filter_midi_data(midi_data, model, sequence_length=32):
+
+def filter_midi_data(midi_data, model, sequence_length=32, midi_file_path="./resultMIDI/impure.mid"):
     # Preprocess the MIDI data to get input sequences
     input_sequences = preprocess_data_for_prediction(midi_data, sequence_length)
 
@@ -111,7 +111,7 @@ def filter_midi_data(midi_data, model, sequence_length=32):
     clean_sequences = model.predict(input_sequences)
 
     # Postprocess the clean sequences to get a clean MIDI file
-    clean_midi_data = postprocess_sequences_to_midi(clean_sequences, "./resultMIDI" + os.path.splitext(os.path.basename(midi_file_path))[0] + ".mid")
+    clean_midi_data = postprocess_sequences_to_midi(clean_sequences, "./resultMIDI/" + os.path.splitext(os.path.basename(midi_file_path))[0] + ".mid")
 
     return clean_midi_data
 
@@ -130,6 +130,8 @@ def export_sheet_music(sheet_music, output_format, filename):
     sheet_music.write(output_format, fp=filename)
 
 if __name__ == "__main__":
+    model = train_machine_learning_model()
+
     root = tk.Tk()
     root.withdraw()  # we don't want a full GUI, so keep the root window from appearing
     midi_file_path = filedialog.askopenfilename()  # show an "Open" dialog box and return the path to the selected file
@@ -137,8 +139,7 @@ if __name__ == "__main__":
     preprocess_midi_data(midi_data)
     #Make an impure version of the midi file directory and save it to adl-piano-midi-impure
     #process_directory("./adl-piano-midi")
-    model = train_machine_learning_model()
-    clean_midi = filter_midi_data(midi_data, model[0])
+    clean_midi = filter_midi_data(midi_data, model[0], 32, midi_file_path)
 
     music_representation = convert_midi_to_music_representation(clean_midi)
     sheet_music = generate_sheet_music(music_representation)

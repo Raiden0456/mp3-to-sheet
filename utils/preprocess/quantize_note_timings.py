@@ -1,3 +1,4 @@
+import mido
 def quantize_note_timings(midi_data, quantize_to=16, mode="both"):
     ticks_per_quantize = midi_data.ticks_per_beat // quantize_to
     start_times = []
@@ -28,11 +29,18 @@ def find_matching_note_on(note_off_msg, start_times):
         if note_on_msg.note == note_off_msg.note and note_on_msg.channel == note_off_msg.channel:
             duration = note_off_msg.time - start_time
             del start_times[i]
-            return start_times, duration
+            return start_times, (note_on_msg, duration)
     return start_times, None
 
 def quantize_times(times_list, ticks_per_quantize):
-    return [(msg, round(time / ticks_per_quantize) * ticks_per_quantize) for msg, time in times_list]
+    quantized_times = []
+    for msg, time in times_list:
+        if isinstance(time, int):
+            quantized_time = round(time / ticks_per_quantize) * ticks_per_quantize
+        else:
+            quantized_time = time
+        quantized_times.append((msg, quantized_time))
+    return quantized_times
 
 def reconstruct_midi_data(midi_data, start_times, durations):
     start_times_dict = {(msg.note, msg.velocity): time for msg, time in start_times if msg.type in ['note_on', 'note_off']}
@@ -49,10 +57,13 @@ def reconstruct_midi_data(midi_data, start_times, durations):
                     msg.time = start_times_dict[msg_tuple] - current_time
 
                 if (msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0)) and msg_tuple in durations_dict:
-                    matching_note_on, _ = find_matching_note_on(msg, start_times)
+                    matching_note_on_list, _ = find_matching_note_on(msg, start_times)
+                    matching_note_on = None
+                    for note_on in matching_note_on_list:
+                        if isinstance(note_on, mido.Message):
+                            matching_note_on = note_on
+                            break
                     if matching_note_on:
                         matching_note_on_tuple = (matching_note_on.note, matching_note_on.velocity)
                         msg.time = start_times_dict[matching_note_on_tuple] + durations_dict[msg_tuple] - current_time
-
     return midi_data
-
