@@ -43,10 +43,6 @@ def make_midi_impure(midi_file_path, alteration_probability=0.1):
         os.remove(midi_file_path)
 
 
-
-
-
-
 def process_directory(directory_path):
     # Iterate over all files in the directory and its subdirectories
     for root, dirs, files in os.walk(directory_path):
