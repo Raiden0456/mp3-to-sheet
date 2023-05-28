@@ -6,37 +6,32 @@ def preprocess_data_for_prediction(midi_data, sequence_length=32):
     # Extract MIDI events from the MidiFile object
     for track in midi_data.tracks:
         for event in track:
-            midi_events.append(event)
+            if hasattr(event, 'note'):
+                midi_events.append([event.note, event.time])
+            else:
+                midi_events.append([0, event.time]) # Replace with appropriate handling
+
     sequences = []
     for i in range(len(midi_events) - sequence_length):
         sequence = midi_events[i:i+sequence_length]
-        # Adjust how to extract features from MIDI events
-        sequence_features = []
-        for event in sequence:
-            if hasattr(event, 'note'):
-                sequence_features.append([event.note, event.time])
-            else:
-                sequence_features.append([0, event.time]) # Replace with appropriate handling
-        sequences.append(sequence_features)
+        sequences.append(sequence)
+
     return np.array(sequences)
 
 # Postprocess predicted sequences to MIDI data
-def postprocess_sequences_to_midi(sequence, output_file_path):
+def postprocess_predictions_to_midi(predictions, midi_data, threshold=0.5, output_file_path="output.mid"):
     mid = mido.MidiFile()
     track = mido.MidiTrack()
     mid.tracks.append(track)
 
-    for note_sequence in sequence:
-        for note in note_sequence:
-            # Ensure the note value is an integer
-            note = int(note)
-
-            note_on = mido.Message('note_on', note=note, velocity=64, time=0)
-            track.append(note_on)
-
-            note_off = mido.Message('note_off', note=note, velocity=64, time=960)
-            track.append(note_off)
+    for i, track in enumerate(midi_data.tracks):
+        for event in track:
+            if hasattr(event, 'note'):
+                # If the model predicts the note is pure, include it in the new MIDI file
+                if predictions[i] >= threshold:
+                    track.append(event)
 
     mid.save(output_file_path)
+    return mid
 
 

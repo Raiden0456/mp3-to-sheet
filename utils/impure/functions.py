@@ -8,13 +8,22 @@ def make_midi_impure(midi_file_path, alteration_probability=0.1):
         # Load the MIDI file
         midi = mido.MidiFile(midi_file_path)
 
+        # Variable to keep track of altered note
+        altered_note = None
+
         # Iterate over all notes in all tracks
         for track in midi.tracks:
             for msg in track:
-                if msg.type == 'note_on' or msg.type == 'note_off':
+                if msg.type == 'note_on':
                     # With a certain probability, alter the note
                     if random.random() < alteration_probability:
-                        msg.note = random.randint(0, 127)
+                        altered_note = random.randint(0, 127)
+                        msg.note = altered_note
+                    else:
+                        altered_note = None
+                elif msg.type == 'note_off' and altered_note is not None:
+                    # If this is a note_off event for a note that was altered, alter it to match
+                    msg.note = altered_note
 
         # Save the altered MIDI file to adl-piano-midi/impure with the same filepath
         midi_file_name = os.path.basename(midi_file_path)
@@ -32,6 +41,8 @@ def make_midi_impure(midi_file_path, alteration_probability=0.1):
         print(f"Skipping file {midi_file_path} due to {type(e).__name__}: {e}")
         # Delete the corrupted file from the original directory
         os.remove(midi_file_path)
+
+
 
 
 
