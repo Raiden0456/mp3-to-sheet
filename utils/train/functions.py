@@ -6,7 +6,7 @@ def split_train_validation_data(preprocessed_midi_data, validation_ratio=0.2):
     return train_data, validation_data
 
 
-def preprocess_data_for_training(preprocessed_midi_data, sequence_length=32):
+def preprocess_data_for_training(preprocessed_midi_data, label, sequence_length=32):
     sequences = []
     labels = []
 
@@ -20,9 +20,6 @@ def preprocess_data_for_training(preprocessed_midi_data, sequence_length=32):
 
         for i in range(len(midi_events) - sequence_length):
             sequence = midi_events[i:i+sequence_length]
-            label = midi_events[i+sequence_length]
-
-            # Adjust how to extract features from MIDI events
             sequence_features = []
             for event in sequence:
                 if hasattr(event, 'note'):
@@ -30,12 +27,13 @@ def preprocess_data_for_training(preprocessed_midi_data, sequence_length=32):
                 else:
                     sequence_features.append([0, event.time])  # Replace with appropriate handling
 
-            if hasattr(label, 'note'):
-                label_encoded = label.note
-            else:
-                label_encoded = 0  # Replace with appropriate handling
-
             sequences.append(sequence_features)
-            labels.append(label_encoded)
+            labels.append(label)
 
-    return np.array(sequences), np.array(labels)
+    # Convert to numpy arrays and ensure they are 2D
+    sequences = np.array(sequences)
+    if sequences.ndim < 2:
+        sequences = np.expand_dims(sequences, axis=-1)
+    labels = np.array(labels)
+
+    return sequences, labels

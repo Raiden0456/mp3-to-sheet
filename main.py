@@ -48,8 +48,8 @@ def train_lstm_model(train_sequences, train_labels, validation_sequences, valida
     model = tf.keras.Sequential([
         tf.keras.layers.InputLayer(input_shape=input_shape),
         tf.keras.layers.LSTM(units=128, return_sequences=True),
-        tf.keras.layers.LSTM(units=128),
-        tf.keras.layers.Dense(units=num_classes, activation='softmax')
+        tf.keras.layers.LSTM(units=128, return_sequences=True),
+        tf.keras.layers.TimeDistributed(tf.keras.layers.Dense(units=num_classes, activation='softmax'))
     ])
 
     print(model.summary())
@@ -64,6 +64,7 @@ def train_lstm_model(train_sequences, train_labels, validation_sequences, valida
     history = model.fit(train_sequences, train_labels, epochs=20, validation_data=(validation_sequences, validation_labels))
 
     return model, history
+
 
 def train_machine_learning_model():
     # Load and preprocess my MIDI data
@@ -83,13 +84,21 @@ def train_machine_learning_model():
     print("Preprocessed {} impure MIDI files".format(len(preprocessed_impure_midi_data)))
 
     # Split the preprocessed MIDI data into training and validation sets
-    train_data, validation_data, train_labels, validation_labels = split_train_validation_data(preprocessed_impure_midi_data, preprocessed_pure_midi_data)
+    train_impure, validation_impure = split_train_validation_data(preprocessed_impure_midi_data)
+    train_pure, validation_pure = split_train_validation_data(preprocessed_pure_midi_data)
     
-    print("Split {} MIDI files into {} training files and {} validation files".format(len(preprocessed_impure_midi_data), len(train_data), len(validation_data)))
+    print("Split {} MIDI files into {} training files and {} validation files".format(len(preprocessed_impure_midi_data), len(train_impure), len(validation_impure)))
 
     # Further preprocess the MIDI data to create input sequences and corresponding labels for training
-    train_sequences, train_labels = preprocess_data_for_training(train_data, train_labels)
-    validation_sequences, validation_labels = preprocess_data_for_training(validation_data, validation_labels)
+    train_sequences_impure, train_labels_impure = preprocess_data_for_training(train_impure, 0)
+    train_sequences_pure, train_labels_pure = preprocess_data_for_training(train_pure, 1)
+    train_sequences = np.concatenate((train_sequences_impure, train_sequences_pure))
+    train_labels = np.concatenate((train_labels_impure, train_labels_pure))
+
+    validation_sequences_impure, validation_labels_impure = preprocess_data_for_training(validation_impure, 0)
+    validation_sequences_pure, validation_labels_pure = preprocess_data_for_training(validation_pure, 1)
+    validation_sequences = np.concatenate((validation_sequences_impure, validation_sequences_pure))
+    validation_labels = np.concatenate((validation_labels_impure, validation_labels_pure))
     
     print("Created {} training sequences and {} validation sequences".format(len(train_sequences), len(validation_sequences)))
 
@@ -100,8 +109,6 @@ def train_machine_learning_model():
     # Train the LSTM model
     model, history = train_lstm_model(train_sequences, train_labels, validation_sequences, validation_labels, input_shape, num_classes)
     return model, history
-
-
 
 def filter_midi_data(midi_data, model, sequence_length=32, midi_file_path="./resultMIDI/impure.mid"):
     # Preprocess the MIDI data to get input sequences
